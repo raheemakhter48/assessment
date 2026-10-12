@@ -95,8 +95,10 @@ const INITIAL_DOCUMENTS: Document[] = [
   },
 ];
 
-// Persistent File Storage with In-Memory fallback
-const DATA_DIR = path.join(process.cwd(), 'data');
+// Persistent File Storage with In-Memory fallback (supports Vercel /tmp)
+const DATA_DIR = process.env.VERCEL
+  ? path.join('/tmp', 'ajaia-data')
+  : path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'documents.json');
 
 let memoryDocuments: Document[] | null = null;
@@ -109,8 +111,8 @@ function loadDocuments(): Document[] {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        memoryDocuments = parsed;
-        return parsed;
+        memoryDocuments = parsed as Document[];
+        return memoryDocuments;
       }
     }
   } catch (err) {
@@ -118,9 +120,9 @@ function loadDocuments(): Document[] {
   }
 
   // Initialize with seed
-  memoryDocuments = JSON.parse(JSON.stringify(INITIAL_DOCUMENTS));
-  saveDocuments(memoryDocuments);
-  return memoryDocuments!;
+  const initialDocs: Document[] = JSON.parse(JSON.stringify(INITIAL_DOCUMENTS));
+  saveDocuments(initialDocs);
+  return initialDocs;
 }
 
 function saveDocuments(docs: Document[]): void {
@@ -314,6 +316,6 @@ export function shareDocument(
 }
 
 export function resetStorageForTests(): void {
-  memoryDocuments = JSON.parse(JSON.stringify(INITIAL_DOCUMENTS));
-  saveDocuments(memoryDocuments!);
+  const initialDocs: Document[] = JSON.parse(JSON.stringify(INITIAL_DOCUMENTS));
+  saveDocuments(initialDocs);
 }
